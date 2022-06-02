@@ -11,4 +11,9 @@ public class ExameRepositoryImpl implements ExameRepository {
         return List.of(new Exame(5l,"Matematica"), new Exame(5l,"Linguas")
                 ,new Exame(5l,"Historia") );
     }
+
+    @Override
+    public Exame guardar(Exame exame) {
+        return null;
+    }
 }

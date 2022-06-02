@@ -4,10 +4,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 import org.udemy.appmokito.exemplos.models.Exame;
 import org.udemy.appmokito.exemplos.repositories.ExameRepository;
 import org.udemy.appmokito.exemplos.repositories.PerguntaRepository;
@@ -27,6 +27,10 @@ class ExameServiceImplTest {
     PerguntaRepository perguntaRepository;
     @InjectMocks
     ExameServiceImpl service;
+
+    @Captor
+    ArgumentCaptor<Long> captor;
+
 
 
     @BeforeEach
@@ -74,12 +78,102 @@ class ExameServiceImplTest {
 
     @Test
     void testNoExistePerguntaExameVerify() {
+        //GIVEN
         when(repository.findaAll()).thenReturn(Dados.EXAMES);
         when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        //THEN
         Exame exame = service.findExameComNomeComPerguntas("Matematica");
         assertNotNull(exame);
-
+        //WHEN
         verify(repository).findaAll();
         verify(perguntaRepository).findPerguntasPorExameId(anyLong());
+    }
+
+    @Test
+    void gardarExame() {
+        //GIVEN
+        when(repository.guardar(any(Exame.class))).then(new Answer<Exame>(){
+            Long sequencia = 8L;
+            @Override
+            public Exame answer(InvocationOnMock invocationOnMock) throws Throwable {
+                Exame exame = invocationOnMock.getArgument(0);
+                exame.setId(++sequencia);
+                return exame;
+            }
+        });
+
+        //WHEN
+        Exame exame = service.guardar(Dados.EXAME_COM_PERGUNTAS);
+        //assertNull(exame.getId());
+        assertEquals(9L,exame.getId());
+        assertEquals("Fisica",exame.getNome());
+
+        //THEN
+        verify(repository).guardar(any(Exame.class));
+        verify(perguntaRepository).gardarVarias(anyList());
+
+    }
+
+
+    void testException() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenThrow(IllegalArgumentException.class);
+        assertThrows(IllegalArgumentException.class,()->service.findExamePorNome("Matematica"));
+    }
+
+    @Test
+    void testArgumentMatchers() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        service.findExameComNomeComPerguntas("Matematica");
+
+        verify(repository).findaAll();
+       // verify(perguntaRepository).findPerguntasPorExameId(argThat(arg -> arg !=null && arg.equals(5L)));
+        //verify(perguntaRepository).findPerguntasPorExameId(eq(5l));
+        verify(perguntaRepository).findPerguntasPorExameId(argThat(new MyArgsMatchers()));
+    }
+    //Com classe podemos customizar as mensagens
+    public static class MyArgsMatchers implements ArgumentMatcher<Long>{
+        private Long aLong;
+        @Override
+        public boolean matches(Long aLong) {
+            this.aLong = aLong;
+            return aLong!=null && aLong >0;
+        }
+
+        @Override
+        public String toString() {
+            return "Deve ser um inteiro Positivo "+this.aLong ;
+        }
+    }
+
+    @Test
+    void testArgsCapture() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        service.findExameComNomeComPerguntas("Matematica");
+
+//        ArgumentCaptor<Long> captor = ArgumentCaptor.forClass(Long.class);
+        verify(perguntaRepository).findPerguntasPorExameId(captor.capture());
+
+        assertEquals(5L,captor.getValue());
+    }
+
+    @Test
+    void testDoThrow() {
+        doThrow(IllegalArgumentException.class).when(perguntaRepository).gardarVarias(anyList());
+        assertThrows(IllegalArgumentException.class, () -> service.guardar(Dados.EXAME_COM_PERGUNTAS));
+    }
+
+    @Test
+    void testDoAnswer() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        //when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        doAnswer(invocationOnMock -> {
+            Long id = invocationOnMock.getArgument(0);
+            return id == 5L?Dados.PERGUNTAS:null;
+        }).when(perguntaRepository).findPerguntasPorExameId(anyLong());
+        Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertEquals(5L,exame.getId());
     }
 }

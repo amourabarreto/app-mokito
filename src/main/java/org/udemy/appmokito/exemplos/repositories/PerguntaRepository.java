@@ -7,4 +7,5 @@ import java.util.List;
 public interface PerguntaRepository {
     List<String> findPerguntasPorExameId(Long id);
     Exame findExamePorNomeComPerguntas(String nome);
+    void gardarVarias(List<String> perguntas);
 }
