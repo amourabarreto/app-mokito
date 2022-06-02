@@ -1,6 +1,7 @@
 package org.udemy.appmokito.exemplos.models;
 
 import lombok.Data;
+import lombok.Generated;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -14,6 +15,6 @@ public class Exame {
     @NonNull
     private String nome;
 
-    private List<String> perguntas;
+    private List<String> perguntas = List.of();
 
 }

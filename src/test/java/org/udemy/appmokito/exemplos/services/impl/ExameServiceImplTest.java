@@ -8,28 +8,33 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.udemy.appmokito.exemplos.dados.Dados;
 import org.udemy.appmokito.exemplos.models.Exame;
 import org.udemy.appmokito.exemplos.repositories.ExameRepository;
 import org.udemy.appmokito.exemplos.repositories.PerguntaRepository;
-import org.udemy.appmokito.exemplos.repositories.impl.ExameRepositoryImpl;
 import org.udemy.appmokito.exemplos.services.ExameService;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+
 @ExtendWith(MockitoExtension.class)
 class ExameServiceImplTest {
+    @Mock
     ExameRepository repository;
-    ExameService service;
+    @Mock
+    PerguntaRepository perguntaRepository;
+    @InjectMocks
+    ExameServiceImpl service;
+
+
     @BeforeEach
     void setUp() {
-         repository = mock(ExameRepository.class);
-         service = new ExameServiceImpl(repository);
+        //MockitoAnnotations.openMocks(this);
+        /*repository = mock(ExameRepository.class);
+         perguntaRepository = mock(PerguntaRepository.class);
+         service = new ExameServiceImpl(repository,perguntaRepository);*/
 
     }
 
@@ -48,6 +53,33 @@ class ExameServiceImplTest {
     }
 
     @Test
-    void findExamePorNomeListaVazia() {
+    void testPerguntaExame() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(5l)).thenReturn(Dados.PERGUNTAS);
+        Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertEquals(5, exame.getPerguntas().size());
+        assertTrue(exame.getPerguntas().contains("aritmetica"));
+    }
+
+    @Test
+    void testPerguntaExameVerify() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(5l)).thenReturn(Dados.PERGUNTAS);
+        Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertEquals(5, exame.getPerguntas().size());
+        assertTrue(exame.getPerguntas().contains("aritmetica"));
+        verify(repository).findaAll();
+        verify(perguntaRepository).findPerguntasPorExameId(anyLong());
+    }
+
+    @Test
+    void testNoExistePerguntaExameVerify() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertNotNull(exame);
+
+        verify(repository).findaAll();
+        verify(perguntaRepository).findPerguntasPorExameId(anyLong());
     }
 }
