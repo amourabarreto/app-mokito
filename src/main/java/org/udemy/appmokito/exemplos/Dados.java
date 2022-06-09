@@ -1,4 +1,4 @@
-package org.udemy.appmokito.exemplos.services.impl;
+package org.udemy.appmokito.exemplos;
 
 import org.udemy.appmokito.exemplos.models.Exame;
 

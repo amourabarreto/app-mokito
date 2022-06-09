@@ -8,9 +8,12 @@ import org.mockito.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
+import org.udemy.appmokito.exemplos.Dados;
 import org.udemy.appmokito.exemplos.models.Exame;
 import org.udemy.appmokito.exemplos.repositories.ExameRepository;
 import org.udemy.appmokito.exemplos.repositories.PerguntaRepository;
+import org.udemy.appmokito.exemplos.repositories.impl.ExameRepositoryImpl;
+import org.udemy.appmokito.exemplos.repositories.impl.PerguntaRepositoryImpl;
 import org.udemy.appmokito.exemplos.services.ExameService;
 
 import java.util.Optional;
@@ -22,9 +25,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ExameServiceImplTest {
     @Mock
-    ExameRepository repository;
+    ExameRepositoryImpl repository;
     @Mock
-    PerguntaRepository perguntaRepository;
+    PerguntaRepositoryImpl perguntaRepository;
     @InjectMocks
     ExameServiceImpl service;
 
@@ -168,12 +171,33 @@ class ExameServiceImplTest {
     @Test
     void testDoAnswer() {
         when(repository.findaAll()).thenReturn(Dados.EXAMES);
-        //when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(Dados.PERGUNTAS);
+        //when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(org.udemy.appmokito.exemplos.Dados.PERGUNTAS);
         doAnswer(invocationOnMock -> {
             Long id = invocationOnMock.getArgument(0);
-            return id == 5L?Dados.PERGUNTAS:null;
+            return id == 5L? Dados.PERGUNTAS:null;
         }).when(perguntaRepository).findPerguntasPorExameId(anyLong());
         Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertEquals(5L,exame.getId());
+    }
+
+    @Test
+    void testDoCallMethod() {
+        when(repository.findaAll()).thenReturn(Dados.EXAMES);
+        //Não chama o método real, pois é um mock
+        when(perguntaRepository.findPerguntasPorExameId(anyLong())).thenReturn(org.udemy.appmokito.exemplos.Dados.PERGUNTAS);
+        //hibrido: é um mock que chama um método real.
+        doCallRealMethod().when(perguntaRepository).findPerguntasPorExameId(anyLong());
+        Exame exame = service.findExameComNomeComPerguntas("Matematica");
+        assertEquals(5L,exame.getId());
+        assertEquals("Matematica",exame.getNome());
+    }
+
+    @Test
+    void testSpy() {
+        ExameRepository exameRepository = spy(ExameRepositoryImpl.class);
+        PerguntaRepository perguntaRepository = spy(PerguntaRepositoryImpl.class);
+        ExameService exameService = new ExameServiceImpl(exameRepository,perguntaRepository);
+        Exame exame = exameService.findExameComNomeComPerguntas("Matematica");
         assertEquals(5L,exame.getId());
     }
 }
